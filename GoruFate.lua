@@ -100,6 +100,12 @@ function TwistedFate.Init()
             Menu.Checkbox("Auto.UseQKS","Use Q to KS", true)
             Menu.Slider("Auto.HitChanceQ", "HitChance ", 0.7, 0, 1, 0.1)
 
+     Menu.NextColumn()
+     Menu.Separator()
+     Menu.ColoredText("Misc", 0xFFFF00FF, true)
+              
+      Menu.Checkbox("Misc.NoOrb", "Disable Orbwalker", true)
+
         Menu.NextColumn()
          Menu.Separator()
         Menu.ColoredText("Drawings", 0xFFFF00FF, true)
@@ -115,15 +121,15 @@ function TwistedFate.Init()
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---[Functions]-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-local function IsSpellReady(slot)--ƒXƒLƒ‹‚ªg—p‰Â”\‚©‚Ç‚¤‚©
+local function IsSpellReady(slot)--ã‚¹ã‚­ãƒ«ãŒä½¿ç”¨å¯èƒ½ã‹ã©ã†ã‹
     return Player:GetSpellState(SpellSlots[slot]) == SpellStates.Ready
 end
 
-function TwistedFate.IsEnabledAndReady(spell, mode)--ƒƒjƒ…[‚Å—LŒøandg—p‰Â”\‚©‚Ç‚¤‚©
+function TwistedFate.IsEnabledAndReady(spell, mode)--ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã§æœ‰åŠ¹andä½¿ç”¨å¯èƒ½ã‹ã©ã†ã‹
 	return Menu.Get(mode..".Use"..spell) and IsSpellReady(spell)
 end
 
-function TwistedFate.GetRawDamageQ()--Q‚Ìƒ_ƒ[ƒW‚ğæ“¾
+function TwistedFate.GetRawDamageQ()--Qã®ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å–å¾—
     local Dmg = 15 + (_Q:GetLevel() * 45) + (Player.TotalAP * 0.65)
     return Dmg
     
@@ -132,6 +138,8 @@ end
 
 
 function TwistedFate.AutoQImmobile(minChance)
+
+   
     local pPos = Player.Position
     --local targs = _Q:GetTargets()
     local targs = TargetSelector:GetTargets(_Q.Range,true)
@@ -141,6 +149,8 @@ function TwistedFate.AutoQImmobile(minChance)
       
 
     for k, targ in pairs(targs) do     
+
+     
      if targ ~= nil then
         --print(targ.Name)
         local buffs = targ.Buffs
@@ -188,11 +198,12 @@ function TwistedFate.AutoQImmobile(minChance)
 end
 
 function TwistedFate.AutoQKS(minChance)
+     
 
     local pPos = Player.Position
 
       
-    for k, targ in ipairs(TargetSelector:GetTargets(_Q.Range-100)) do        
+    for k, targ in ipairs(TargetSelector:GetTargets(_Q.Range-400)) do        
         
 
         local targHp = targ.Health --_Q:GetHealthPred(targ) -----@field CalculateMagicalDamage fun(source:AIBaseClient, target: AttackableUnit, rawDmg: number):number
@@ -243,7 +254,12 @@ end
 
 function TwistedFate.OnTick()
 
-    Orbwalker.BlockMove(true)
+      if Menu.Get("Misc.NoOrb") then 
+    Orbwalker.BlockMove(true) 
+  else
+    Orbwalker.BlockMove(false) 
+  end 
+
 
     if TwistedFate.Auto() then return end
 
@@ -270,8 +286,12 @@ function TwistedFate.Auto()
 	if TwistedFate.IsEnabledAndReady("Q", "Auto") then
         TwistedFate.AutoQImmobile(Menu.Get("Auto.HitChanceQ"))
     end
+   
+      
+
+
  
-   if Menu.Get("Auto.UseQKS") and IsSpellReady("Q")then
+   if Menu.Get("Auto.UseQKS") and IsSpellReady("Q") and Player:GetBuff("goldcardpreattack") == nil then
         TwistedFate.AutoQKS(Menu.Get("Auto.HitChanceQ"))
     end
 
