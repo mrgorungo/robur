@@ -205,6 +205,7 @@ function cmpfunc( a, b )
                  --print(Target.BonusHealth)
                 Viktor.E2:Cast(secTarget,Player.Position:Extended(firstTarget.Position,Player.Position:Distance(firstTarget.Position)-10))
             elseif  Player.Position:Distance(firstTarget.Position) <= Viktor.E.Range then
+            Pos = Player.Position:Extended(firstTarget.Position, ECastRange)
                 --print("ELong")
                  --print(firstTarget.BonusHealth)
                  --print(Target.BonusHealth)
@@ -224,7 +225,7 @@ function cmpfunc( a, b )
                         Viktor.E2:Cast(pred.CastPosition,Pos)                
                      end    
                  end
-            end
+            
         end
     end
             
@@ -256,6 +257,7 @@ function cmpfunc( a, b )
   end
                 
 end
+
 function GetHeroes(pos, range, team)
     local arr = {}
     for k, v in pairs(ObjectManager.Get(team, "heroes")) do
@@ -350,7 +352,7 @@ end
    local WTarget = Viktor.W:GetTarget()
 
 
-  if WTarget then
+  if WTarget and Viktor.W:IsReady() then
 
     Viktor.W:CastOnHitChance(WTarget,0.7)
     return true 
@@ -387,6 +389,8 @@ function Viktor.LoadMenu()
       Menu.Keybind("Misc.UseW", "USE W  ", string.byte('S'),false,false)
       Menu.Checkbox("Misc.NoOrb", "Disable Orbwalker", true)
       Menu.Slider("Misc.EHitChance","EHitChance",0.7, 0, 1, 0.1)
+                  Menu.Checkbox("Misc.AntiGapCloserQ", "Use Q on GapCloser", true)
+            Menu.Checkbox("Misc.AntiGapCloserW", "Use W on GapCloser", true)
       --Menu.Dropdown("Misc.EHitChance", "EHitChance", 2, HitChanceStrings)
 
     end)
@@ -436,8 +440,20 @@ function Viktor.OnInterruptibleSpell(unit, spell, Danger, EndTime, CanMoveDuring
 end
 
 
-
-
+function Viktor.OnGapclose(source, dash)
+    if not source.IsEnemy or source.Invulnerable then
+        return
+    end
+ 
+    local GapQ = Menu.Get("Misc.AntiGapCloserQ")
+    local GapW = Menu.Get("Misc.AntiGapCloserW")
+    if GapW and Viktor.W:IsReady() and Viktor.W:IsInRange(source) then
+        Viktor.W:Cast(source.Position)
+    end
+    if Viktor.Q:IsReady() and Viktor.Q:IsInRange(source) and GapQ then
+        Viktor.Q:Cast(source)
+    end
+end
 
 
 
@@ -485,7 +501,7 @@ function Viktor.OnTick()
         Viktor.RFollow()
   end
 
-     if Menu.Get("Misc.UseW") then 
+     if Menu.Get("Misc.UseW")  then 
         Viktor.UseW()
   end
 end
