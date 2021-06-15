@@ -33,6 +33,7 @@ function NAShacoMenu()
 		Menu.Checkbox("Combo.CastIgnite", "Cast Ignite if Available", true)
 		Menu.Checkbox("Combo.CastSmite", "Cast Smite if Available", true)
 		Menu.Checkbox("Combo.CastProwler", "Cast Prowler's Claw if Available", true)
+		Menu.Checkbox("Combo.CastWhip", "Cast IronsWhip if Available", true)
 	end)
 	Menu.NewTree("NAShacoHarass", "Harass", function ()
 		Menu.Checkbox("Harass.CastW","Cast W",true)
@@ -118,6 +119,19 @@ local function GetProwlerSlot()
 	return SpellSlots.Unknown
 end
 
+local function GetWhipSlot()	
+	for i=SpellSlots.Item1, SpellSlots.Item6 do
+		local item = Player:GetSpell(i)
+		if item and item.Name == "6029Active" then
+			return i
+		end
+	end
+	
+	return SpellSlots.Unknown
+end
+
+
+
 -- Global vars
 local spells = {
 	Q = Spell.Skillshot({
@@ -162,6 +176,12 @@ local spells = {
 		Slot = GetProwlerSlot(),
 		Delay = math.huge,
 		Range = 500,
+	}),
+
+	Whip = Spell.Active({
+		Slot = GetWhipSlot(),
+		Delay = math.huge,
+		Range = 280,
 	}),
 }
 
@@ -656,11 +676,28 @@ local function OnNormalPriority()
 				end
 			end
 		end
+
+				if Menu.Get("Combo.CastWhip") then
+			spells.Prowler.Slot = GetWhipSlot()
+			if spells.Prowler.Slot ~= SpellSlots.Unknown then
+				if spells.Prowler:IsReady() then
+					local target = Orbwalker.GetTarget() or TS:GetTarget(spells.Prowler.Range + Player.BoundingRadius, true)
+					if target and target.Position:Distance(Player.Position) <= (spells.Whip.Range + Player.BoundingRadius) and not qActive then
+						spells.Whip:Cast()
+						return
+					end
+				end
+			end
+		end
+
+
 		if Menu.Get("Combo.CastE") then
 			if spells.E:IsReady() and not qActive then
 				local target = Orbwalker.GetTarget() or TS:GetTarget(spells.E.Range + Player.BoundingRadius, true)
 				if target and target.Position:Distance(Player.Position) <= (spells.E.Range + Player.BoundingRadius)
-						and Player.Mana >= (Menu.Get("Combo.CastEMinMana") / 100) * Player.MaxMana then
+						and Player.Mana >= (Menu.Get("Combo.CastEMinMana") / 100) * Player.MaxMana 
+						and target.HealthPercent<0.30 then
+						--print(target.HealthPercent)
 					CastE(target)
 					return
 				end
