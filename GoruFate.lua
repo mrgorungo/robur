@@ -48,7 +48,7 @@ local _Q = SpellLib.Skillshot({
     Delay = 0.25,
     Type = "Linear",
     Collisions={ Heroes = false, Minions = false, WindWall = true, Wall = false},
-    UseHitbox = true
+    --UseHitbox = true
 })
 
 
@@ -160,33 +160,39 @@ function TwistedFate.AutoQImmobile(minChance)
         if buffs ~= nil then
         for buffName, buff in pairs(buffs) do
         --print(buffName)
-         if buff.BuffType == Enums.BuffTypes.Stun
+         if (buff.BuffType == Enums.BuffTypes.Stun
          or buff.BuffType == Enums.BuffTypes.Snare
-         or buff.BuffType == Enums.BuffTypes.Taunt
+         
+         or buff.BuffType == Enums.BuffTypes.Suppression
+         or buff.BuffType == Enums.BuffTypes.Knockup
+        ) 
+         
+         
+         and not targ.Pathing.isDashing and not targ.Pathing.isMoving
+         --or buff.BuffType == Enums.BuffTypes.Slow
+         then _Q:Cast(targ.Position) return 
+         
+         elseif buff.BuffType == Enums.BuffTypes.Taunt
          or buff.BuffType == Enums.BuffTypes.Fear
          or buff.BuffType == Enums.BuffTypes.Flee
          or buff.BuffType == Enums.BuffTypes.Charm
-         or buff.BuffType == Enums.BuffTypes.Suppression
-         or buff.BuffType == Enums.BuffTypes.Knockup
-         or buff.BuffType == Enums.BuffTypes.Knockback
-         or buff.BuffType == Enums.BuffTypes.Asleep
-         --or buff.BuffType == Enums.BuffTypes.Slow
-         then
+          or buff.BuffType == Enums.BuffTypes.Knockback
+         or buff.BuffType == Enums.BuffTypes.Asleep 
 
-          --
-          --local flightTime = delay + (pPos:Distance(targ)/_Q.Speed)
-          --ImmobileLib.GetImmobileTimeLeft(targ) <= flightTime and not
+         then 
+         local pred = Prediction.GetPredictedPosition(targ, _Q, Player.Position)
           
-           local pred = Prediction.GetPredictedPosition(targ, _Q, Player.Position)
-          
-                  if pred and pred.HitChance >= Menu.Get("Auto.HitChanceQ") and targ.IsValid and targ.IsEnemy and targ.IsHero then
-          
-                        
-                     _Q:Cast(targ,pred.CastPosition)
-                     end
-          
+         if pred and pred.HitChance >= Menu.Get("Auto.HitChanceQ") and targ.IsValid and targ.IsEnemy and targ.IsHero then
+            --if targ.Position ~= pred.CastPosition then 
+                     --print("Targ    ".."x  "..targ.Position.x.."   y   "..targ.Position.y.."    z"  ..targ.Position.z)
+                     --print("x"..pred.CastPosition.x.."y"..pred.CastPosition.y.."z"..pred.CastPosition.z)
+                     
+                     --end
+            _Q:Cast(targ,pred.CastPosition)
          end
-        end
+         
+         end
+
         end
         end
         end
@@ -195,6 +201,7 @@ function TwistedFate.AutoQImmobile(minChance)
 
 
 
+end
 end
 
 function TwistedFate.AutoQKS(minChance)
