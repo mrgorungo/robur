@@ -168,7 +168,7 @@ function TwistedFate.AutoQImmobile(minChance)
         ) 
          
          
-         and not targ.Pathing.isDashing and not targ.Pathing.isMoving
+         --and (targ.Pathing.isDashing ==nil and targ.Pathing.isMoving==nil)
          --or buff.BuffType == Enums.BuffTypes.Slow
          then _Q:Cast(targ.Position) return 
          

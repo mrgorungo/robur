@@ -490,6 +490,13 @@ function Viktor.OnTick()
     Orbwalker.BlockMove(false) 
   end 
 
+  if Player:CanEvolveSpell(SpellSlots.E) and not Player:IsSpellEvolved(SpellSlots.E) then 
+ 
+    Input.LevelSpell(SpellSlots.E)
+  end
+
+
+
 
 
  
