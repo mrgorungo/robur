@@ -12,6 +12,9 @@ local Orbwalker = _G.Libs.Orbwalker
 local Spell, HealthPred = _G.Libs.Spell, _G.Libs.HealthPred
 local DamageLib = _G.Libs.DamageLib
 
+local Vector1 = nil
+local Vector2 =nil
+
 TS = _G.Libs.TargetSelector(Orbwalker.Menu)
 
 -- NewMenu
@@ -63,6 +66,7 @@ function NAShacoMenu()
 	end)
 	Menu.NewTree("NAShacoMisc", "Misc.", function ()
 		Menu.Checkbox("Misc.CastAAQOnlyBackstab","AA Only if Backstab while Stealth on Q",true)
+		Menu.Checkbox("Misc.AutoBackposition","Auto move to enemy back",true)
 		Menu.Checkbox("Misc.CastEKS","Auto-Cast E Killable",true)
 		Menu.Checkbox("Misc.CastWGap","Auto-Cast W GapCloser",true)
 		Menu.Checkbox("Misc.CastRLowHP","Auto-Cast R LowHP",true)
@@ -119,16 +123,6 @@ local function GetProwlerSlot()
 	return SpellSlots.Unknown
 end
 
-local function GetWhipSlot()	
-	for i=SpellSlots.Item1, SpellSlots.Item6 do
-		local item = Player:GetSpell(i)
-		if item and item.Name == "6029Active" then
-			return i
-		end
-	end
-	
-	return SpellSlots.Unknown
-end
 
 
 
@@ -178,11 +172,7 @@ local spells = {
 		Range = 500,
 	}),
 
-	Whip = Spell.Active({
-		Slot = GetWhipSlot(),
-		Delay = math.huge,
-		Range = 280,
-	}),
+
 }
 
 local jgWSpots = {
@@ -238,6 +228,17 @@ local function isTargetCC(target)
 	return target.IsImmovable or target.IsTaunted or target.IsFeared or target.IsSurpressed or target.IsAsleep
 		or target.IsCharmed or target.IsSlowed or target.IsGrounded
 end
+
+local function GetEnemyNexus()
+	for _, value in pairs(ObjManager.Get("enemy", "turrets")) do
+            if self:IsValidTW(value) then
+                Renderer.DrawCircle3D(value.Position, 875, 30, 4, CollorPallet.RED)
+            end
+        end
+end
+
+
+
 
 local function GetEDmg(target)
 	local playerAI = Player.AsAI
@@ -570,7 +571,7 @@ local function autoR()
 	local target =  spells.R:GetTarget()
 		
 		if target then
-			print(target.CharName)
+			--print(target.CharName)
 			
 			spells.R:Cast(target)
 			return true
@@ -607,6 +608,7 @@ local function OnNormalPriority()
 	if gameTime < (lastTick + 0.25) then return end
 	lastTick = gameTime
 
+	Vector1 = Player.Direction
 
 	
 	if Menu.Get("Misc.CastWInitialJg") and spells.W:IsReady() 
@@ -616,6 +618,19 @@ local function OnNormalPriority()
 	
 	-- Combo
 	if Orbwalker.GetMode() == "Combo" then
+
+	local aatarg = TS:GetTarget(150, false)
+	if  aatarg then
+		if Menu.Get("Misc.AutoBackposition") and aatarg and aatarg:IsFacing(Player.Position,50) and qActive  then
+			--Orbwalker.MoveTo(aatarg.Position:Extended(Player.Position,-90))
+		else
+			--Orbwalker.BlockMove(true)
+		end
+	else
+		
+	end
+		
+
 		if Menu.Get("Combo.CastQ") then
 			if spells.Q:IsReady() then
 				local target = Orbwalker.GetTarget() or TS:GetTarget(1300 + Player.BoundingRadius, false)
@@ -677,18 +692,8 @@ local function OnNormalPriority()
 			end
 		end
 
-				if Menu.Get("Combo.CastWhip") then
-			spells.Prowler.Slot = GetWhipSlot()
-			if spells.Prowler.Slot ~= SpellSlots.Unknown then
-				if spells.Prowler:IsReady() then
-					local target = Orbwalker.GetTarget() or TS:GetTarget(spells.Prowler.Range + Player.BoundingRadius, true)
-					if target and target.Position:Distance(Player.Position) <= (spells.Whip.Range + Player.BoundingRadius) and not qActive then
-						spells.Whip:Cast()
-						return
-					end
-				end
-			end
-		end
+			
+
 
 
 		if Menu.Get("Combo.CastE") then
@@ -697,7 +702,7 @@ local function OnNormalPriority()
 				if target and target.Position:Distance(Player.Position) <= (spells.E.Range + Player.BoundingRadius)
 						and Player.Mana >= (Menu.Get("Combo.CastEMinMana") / 100) * Player.MaxMana 
 						and target.HealthPercent<0.30 then
-						--print(target.HealthPercent)
+						print(target.CharName..target.HealthPercent)
 					CastE(target)
 					return
 				end
@@ -781,6 +786,10 @@ local function OnDraw()
 		Renderer.DrawCircle3D(Player.Position, spells.E.Range, 30, 1.0, Menu.Get("Drawing.DrawEColor"))
 	end
 
+
+
+
+
 	-- Draw Q Predicted Pos
 	if Player:GetSpell(SpellSlots.Q).IsLearned and spells.Q:IsReady() and Menu.Get("Drawing.DrawQPredPos") then
 
@@ -798,6 +807,10 @@ local function OnDraw()
 
 	end
 	
+
+
+
+
 	-- Draw Jungle W Spots
 	local gameTime = Game.GetTime()
 	if Player:GetSpell(SpellSlots.W).IsLearned and Menu.Get("Drawing.DrawJgSpots") and
@@ -843,13 +856,30 @@ end
 
 local function OnPreAttack(args)
 
-	if qActive and Menu.Get("Misc.CastAAQOnlyBackstab")then
-		local pPos = Player.Position
-		if args.Target:IsFacing(pPos,90) then
+
+
+local pPos = Player.Position
+
+
+
+	if  Menu.Get("Misc.CastAAQOnlyBackstab") and args.Target.IsHero and args.Target.Position:Distance(Player.Position)<500 and args.Target:IsFacing(pPos,90) and qActive then
+		
+		
+		
+		
+			--Orbwalker.MoveTo(args.Target.Position:Extended(Player.Position,-80))
 			args.Target = nil
-		end
+			
+	--else
+			--Orbwalker.MoveTo(nil)
+			
 	end
-	
+
+
+
+		--args.Target = true
+		
+
 	local target = args.Target
 	
 	if target and target.IsMonster and Menu.Get("Misc.JgBackStab") then
@@ -859,6 +889,21 @@ local function OnPreAttack(args)
 		end
 	end
 end
+
+
+
+
+local function OnPostAttack(target)
+
+
+
+
+	
+
+end
+
+
+
 
 local function OnBuffGain(obj, buffInst)
 	if obj.IsMe then
@@ -894,6 +939,7 @@ function OnLoad()
 	EventManager.RegisterCallback(Enums.Events.OnDrawDamage, OnDrawDamage)
 	EventManager.RegisterCallback(Enums.Events.OnGapclose, OnGapclose)
 	EventManager.RegisterCallback(Enums.Events.OnPreAttack, OnPreAttack)
+	EventManager.RegisterCallback(Enums.Events.OnPostAttack, OnPostAttack)
 	EventManager.RegisterCallback(Enums.Events.OnBuffGain, OnBuffGain)
 	EventManager.RegisterCallback(Enums.Events.OnBuffLost, OnBuffLost)
 

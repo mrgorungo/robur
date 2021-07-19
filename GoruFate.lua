@@ -143,7 +143,7 @@ function TwistedFate.AutoQImmobile(minChance)
     local pPos = Player.Position
     --local targs = _Q:GetTargets()
     local targs = TargetSelector:GetTargets(_Q.Range,true)
-    --local delay = Game.GetLatency()/1000 + _Q.Delay
+    local delay = Game.GetLatency()/1000 + _Q.Delay
 
     if targs ~= nil then
       
@@ -154,23 +154,27 @@ function TwistedFate.AutoQImmobile(minChance)
      if targ ~= nil then
         --print(targ.Name)
         local buffs = targ.Buffs
-        --local flightTime = delay + (pPos:Distance(targ)/_Q.Speed)
+        local flightTime = delay + (pPos:Distance(targ)/_Q.Speed)
         
         
         if buffs ~= nil then
         for buffName, buff in pairs(buffs) do
-        --print(buffName)
+
+
+         
          if (buff.BuffType == Enums.BuffTypes.Stun
-         or buff.BuffType == Enums.BuffTypes.Snare
+         or buff.BuffType == 12
          
          or buff.BuffType == Enums.BuffTypes.Suppression
-         or buff.BuffType == Enums.BuffTypes.Knockup
-        ) 
+         or buff.BuffType == Enums.BuffTypes.Knockup)
+        
+         and buff.DurationLeft+0.2 >= flightTime then
+
+     
          
          
-         --and (targ.Pathing.isDashing ==nil and targ.Pathing.isMoving==nil)
-         --or buff.BuffType == Enums.BuffTypes.Slow
-         then _Q:Cast(targ.Position) return 
+        _Q:Cast(targ.Position) 
+         
          
          elseif buff.BuffType == Enums.BuffTypes.Taunt
          or buff.BuffType == Enums.BuffTypes.Fear
@@ -181,14 +185,14 @@ function TwistedFate.AutoQImmobile(minChance)
 
          then 
          local pred = Prediction.GetPredictedPosition(targ, _Q, Player.Position)
-          
+        
          if pred and pred.HitChance >= Menu.Get("Auto.HitChanceQ") and targ.IsValid and targ.IsEnemy and targ.IsHero then
             --if targ.Position ~= pred.CastPosition then 
                      --print("Targ    ".."x  "..targ.Position.x.."   y   "..targ.Position.y.."    z"  ..targ.Position.z)
                      --print("x"..pred.CastPosition.x.."y"..pred.CastPosition.y.."z"..pred.CastPosition.z)
                      
                      --end
-            _Q:Cast(targ,pred.CastPosition)
+            _Q:Cast(pred.CastPosition)
          end
          
          end
@@ -219,8 +223,8 @@ function TwistedFate.AutoQKS(minChance)
    
             if targHp - qDmg <= 0 then
                   local pred = Prediction.GetPredictedPosition(targ, _Q, Player.Position)
-                  if pred and pred.HitChance >= Menu.Get("Auto.HitChanceQ")  and targ.IsValid and targ.IsEnemy and targ.IsHero then
-                  _Q:Cast(targ,pred.CastPosition)
+                  if pred and pred.HitChance >= Menu.Get("Auto.HitChanceQ")  and targ.IsValid and targ.IsEnemy and targ.IsHero and not targ.IsZombie then
+                  _Q:Cast(pred.CastPosition)
                  --_Q:Cast(targ)
                  end
             end

@@ -112,8 +112,10 @@ end
 local function GetWhipSlot()	
 	for i=SpellSlots.Item1, SpellSlots.Item6 do
 		local item = Player:GetSpell(i)
-		if item and item.Name == "6029Active" then
+		if item then 
+		if item.Name == "6029Active" or item.Name == "6631Active" then
 			return i
+		end
 		end
 	end
 	
@@ -166,7 +168,7 @@ local spells = {
 	Whip = Spell.Active({
 		Slot = GetWhipSlot(),
 		Delay = math.huge,
-		Range = 300,
+		Range = 270,
 	}),
 }
 
@@ -241,7 +243,7 @@ local function GetQDmg(target)
 
 	local totalDmg = (dmgQ + bonusDmg) + (dmgQ + bonusDmg) * stackDmg
 
-	print(totalDmg)
+	
 	
 
 	

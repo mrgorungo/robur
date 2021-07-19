@@ -35,7 +35,7 @@ local lastWardPlace = OsClock()
 local Menu = Lib.NewMenu
 local Geometry = SDK.Geometry
 local Vector = Geometry.Vector
-local SpellSlots, SpellStates = Enums.SpellSlots, Enums.SpellStates
+
 local CollorPallet = {
     RED = 0xE60000FF,
     GREEN = 0xFF00FF,
@@ -172,7 +172,6 @@ end
 function HasItem(itemId)
     for itemSlot, item in pairs(Player.Items) do
         if item and item.ItemId == itemId and Player:GetSpellState(itemSlot) == Enums.SpellStates.Ready then
-
             return itemSlot, item
         end
     end
@@ -301,37 +300,7 @@ function BaseStrucutre:new(dat)
     for key, value in pairs(Obj.Get("all", "heroes")) do
         if not value.IsMe then
             local hero = value.AsHero
-
             if hero.CharName ~= "PracticeTool_TargetDummy" then
-                local s_s1,s_s2 = nil , nil 
-
-                if hero:GetSpell(Enums.SpellSlots.Summoner1).Name:lower():find("ultbook") then 
-                    s_s1 =  Renderer.CreateSprite("Summoners\\\\Summoner_UltBook_Placeholder.png",24, 24)
-                    
-                elseif hero:GetSpell(Enums.SpellSlots.Summoner2).Name:lower():find("ultbook") then
-
-                    s_s2 =  Renderer.CreateSprite("Summoners\\\\Summoner_UltBook_Placeholder.png",24, 24)
-                end
-
-                if s_s1 ==nil then 
-                    s_s1 =  Renderer.CreateSprite("Summoners\\\\" ..
-                                                                hero:GetSpell(Enums.SpellSlots.Summoner1).Name .. ".png",
-                                    24, 24)
-                end
-
-
-                    
-                if s_s2 == nil then 
-                    s_s2 =  Renderer.CreateSprite("Summoners\\\\" ..
-                                                                hero:GetSpell(Enums.SpellSlots.Summoner2).Name .. ".png",
-                                    24, 24)
-                end
-
-
-
-
-
-
                 Heroes[hero.IsAlly and hero.CharName or counter] =
                     {
                         HeroData = hero,
@@ -340,24 +309,23 @@ function BaseStrucutre:new(dat)
                             Hero = Renderer.CreateSprite("Champions\\\\" .. hero.CharName .. ".png", 42, 42),
                             Ultimate = Renderer.CreateSprite("Ultimates\\\\" .. hero.CharName .. ".png", 24, 24),
                             Summoners = {
-                                SS1 = s_s1,
-                                SS2 = s_s2
+                                SS1 = Renderer.CreateSprite("Summoners\\\\" ..
+                                                                hero:GetSpell(Enums.SpellSlots.Summoner1).Name .. ".png",
+                                    24, 24),
+                                SS2 = Renderer.CreateSprite("Summoners\\\\" ..
+                                                                hero:GetSpell(Enums.SpellSlots.Summoner2).Name .. ".png",
+                                    24, 24)
                             }
                         }
                     }
 
-                if hero:GetSpell(Enums.SpellSlots.Summoner1).Name == "SummonerFlash" then
+           if hero:GetSpell(Enums.SpellSlots.Summoner1).Name == "SummonerFlash" then
              
-                    ssswap = Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS2
-		  	        Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS2 = Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS1
-		            Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS1 = ssswap
+              ssswap = Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS2
+		  	  Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS2 = Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS1
+		      Heroes[hero.IsAlly and hero.CharName or counter].Icons.Summoners.SS1 = ssswap
            
-                end
-
-
-
-
-
+           end
 
                 counter = counter + 1
             end
@@ -619,31 +587,14 @@ end
 
 function BaseStrucutre:CastActiveAntiCCItem()
     local reactionDelay = Menu.Get("Activator.Items.Defensive.AntiCC.Delay")
-    local activeItemSelf = nil
-    for i=SpellSlots.Item1, SpellSlots.Item6 do
-		local item = Player:GetSpell(i)
-                 
-		if item  then
-        --print(item.Name)
-      if item.Name == "QuicksilverSash" or item.Name == "ItemMercurial" or item.Name == "6035_Spell" then
-			 activeItemSelf = i
-             end
-		end
-	end
-
-    
-
-
-
-    --local activeItemSelf = GetItemSlot(UsableItems.DefensiveItems.AntiCC.Self)
+    local activeItemSelf = GetItemSlot(UsableItems.DefensiveItems.AntiCC.Self)
     local activeItemAny = GetItemSlot(UsableItems.DefensiveItems.AntiCC.Any)
-
-    --print(activeItemSelf.Name)
     if activeItemSelf then
-
-        delay(reactionDelay,Input.Cast,activeItemSelf)
+        delay(reactionDelay, Input.Cast, activeItemSelf)
         return true
-   
+    elseif activeItemAny then
+        delay(reactionDelay, Input.Cast, activeItemSelf, Player)
+        return true
     end
 end
 
@@ -801,20 +752,6 @@ end
 function BaseStrucutre:OnLowPriority()
     local Target = Orb.GetTarget()
     local OrbMode = Orb.GetMode()
-
-    if  OrbMode == "Combo" and not Player.IsDead then
-
-      if Menu.Get("Activator.Items.Defensive.AntiCC") then
-            
-            local styleUsage = Menu.Get("Activator.Items.Defensive.AntiCC.Style")
-            if styleUsage == 0 and IsOnHardCC() and self:CastActiveAntiCCItem() then
-                return
-            elseif styleUsage == 1 and IsOnAnyCC() and self:CastActiveAntiCCItem() then
-                return
-            end
-        end
-    end
-
     if Menu.Get("AutoWard.PlaceWard") and OsClock() - lastMoveAction > 1 then
         local hasWard = GetWardItem()
         if hasWard then
@@ -914,7 +851,14 @@ function BaseStrucutre:OnLowPriority()
                 return
             end
         end
-      
+        if Menu.Get("Activator.Items.Defensive.AntiCC") then
+            local styleUsage = Menu.Get("Activator.Items.Defensive.AntiCC.Style")
+            if styleUsage == 0 and IsOnHardCC() and self:CastActiveAntiCCItem() then
+                return
+            elseif styleUsage == 1 and IsOnAnyCC() and self:CastActiveAntiCCItem() then
+                return
+            end
+        end
         if Menu.Get("Activator.Items.Defensive.Untargetable") then
             local styleUsage = Menu.Get("Activator.Items.Defensive.Untargetable.Style")
             local minHpPercent = Menu.Get("Activator.Items.Defensive.Untargetable.Percent")
